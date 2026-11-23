@@ -1,8 +1,14 @@
 # RTSS Launcher
 
-Starts RivaTuner Statistics Server (RTSS) when you launch a Steam game and closes it when the game exits. No console windows and no UAC prompts. It also writes per-game frame limits into RTSS.
+[![Latest release](https://img.shields.io/github/v/release/scdemanett/rtss-launcher)](https://github.com/scdemanett/rtss-launcher/releases/latest)
+[![License: MIT](https://img.shields.io/github/license/scdemanett/rtss-launcher)](LICENSE)
+![Platform: Windows 10 | 11](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078D6)
 
-Preset: **Chrome** (Techland, 2003), with `ChromeSingle.exe` and `ChromeNet.exe` capped at 60 FPS.
+Starts RivaTuner Statistics Server (RTSS) when you launch a Steam game and closes it when the game exits. No console windows and no UAC prompts. It also writes per-game frame limits (FPS caps) and other RTSS profile settings, so RTSS only runs while you play instead of sitting in the tray from Windows startup.
+
+Use it as a Steam launch option for any game: a lightweight way to auto-start the RTSS frame limiter for older games that run too fast, stutter or have no built-in FPS cap.
+
+Comes with frame limits for 15 older games that break at high frame rates, from Chrome (Techland, 2003) to F.E.A.R., GTA IV and the early Hitman games. See [`config.ini`](config.ini) for the list and the reason for each cap, sourced from PCGamingWiki.
 
 **Download:** get `rtss-launcher-<version>.zip` from [Releases](https://github.com/scdemanett/rtss-launcher/releases), or clone the repo. Nothing is pre-compiled; the installer builds the launcher from source on your machine.
 
@@ -49,13 +55,17 @@ SomeOtherGame.exe=144
 ```
 Then run **Install.cmd** again. Use `0` to remove a limit. Any Steam game can use the launcher with the same launch option, even without a frame-limit line.
 
+Comments must be on their own line starting with `;`. Use the game's real exe, not its launcher, and avoid generic names like `Game.exe`: RTSS matches profiles by file name, so a generic name would cap unrelated programs too.
+
 ## Other RTSS settings
 Any setting in an RTSS profile can be set from `config.ini`, written as `Section.Key=Value` to match the `[Section]` and `Key=` in `RTSS\Profiles\<exe>.cfg`:
 ```ini
-[ProfileSettings]        ; applies to every game listed
-OSD.EnableOSD=0          ; "On-Screen Display support" off
+; Applies to every game listed. "On-Screen Display support" off:
+[ProfileSettings]
+OSD.EnableOSD=0
 
-[Profile:ChromeNet.exe]  ; overrides for one game
+; Overrides for one game:
+[Profile:ChromeNet.exe]
 OSD.EnableOSD=1
 ```
 To find the name of any setting, change it in the RTSS window, close RTSS, and see which line changed in that game's `.cfg` file.
@@ -67,6 +77,12 @@ To find the name of any setting, change it in the RTSS window, close RTSS, and s
 - **A leftover RTSS tray icon after quitting:** RTSS is force-closed, so Windows leaves a ghost icon until you move the mouse over it. It's harmless.
 - **RTSS stays open after the game:** check that RTSS's **Start with Windows** is off and that RTSS wasn't already open before you clicked Play.
 - **Anti-cheat games:** some block RTSS hooks however it's launched.
+
+## FAQ
+- **Do I need MSI Afterburner?** No. Only RTSS is needed. If Afterburner is running it may start RTSS itself; the launcher then leaves that RTSS open, since it didn't start it.
+- **Does it work with non-Steam games?** It's built for Steam's `%command%` launch option. Other launchers that can wrap a game's command line may work but aren't tested.
+- **Why not just set RTSS to start with Windows?** That keeps RTSS hooking every app all the time. This starts it only for the games you choose and closes it afterwards.
+- **Is it safe?** The source is one C# file and two PowerShell scripts. Nothing is downloaded; the exe is compiled on your machine from `src\RTSSLauncher.cs`.
 
 ## Uninstall
 Double-click **Uninstall.cmd**, here or in `C:\Program Files\RTSS Launcher`. Then clear the game's Steam launch options. RTSS and its profiles are left in place.

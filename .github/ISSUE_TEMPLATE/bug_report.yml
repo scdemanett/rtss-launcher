@@ -1,0 +1,31 @@
+name: Bug report
+description: RTSS didn't start, didn't close, or a frame limit wasn't applied
+labels: [bug]
+body:
+  - type: input
+    id: game
+    attributes:
+      label: Game
+      description: Game name and the exe(s) it runs
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: RTSS Launcher version, RTSS version, Windows version
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you expected, and what happened instead
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: Contents of %LOCALAPPDATA%\RTSSLauncher\launcher.log from the run
+      render: text

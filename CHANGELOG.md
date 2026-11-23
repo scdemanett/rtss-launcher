@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.0] - 2026-11-22
+### Added
+- Frame limits for more games that break at high frame rates, per PCGamingWiki: Chrome SpecForce, Deadly Premonition: The Director's Cut, Deus Ex, Deus Ex: Invisible War, Duke Nukem: Manhattan Project, F.E.A.R. (with Extraction Point and Perseus Mandate), F.E.A.R. 2, Grand Theft Auto IV, Hitman: Codename 47, Hitman 2, Hitman: Contracts, Hitman: Blood Money, Joe Danger and You Are Empty.
+- Commented-out, situational limits for Hydrophobia: Prophecy, Kane & Lynch: Dead Men, Bully: Scholarship Edition and Mirror's Edge Catalyst.
+- Bug report issue template that asks for `launcher.log`.
+
+### Changed
+- README: badges, a fuller description and an FAQ.
+
+### Fixed
+- README `[ProfileSettings]` example used comments after values, which the installer reads as part of the value.
+
 ## [1.0.0] - 2026-11-22
 ### Added
 - Windowless `RTSSLauncher.exe`, compiled on install from `src/RTSSLauncher.cs` with the .NET Framework 4 compiler built into Windows.
