@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.2.0] - 2026-11-24
 ### Added
 - Install.cmd can add the Steam launch option for you. It finds installed games with settings in `config.ini`, lets you choose from them or add any other installed game by name, closes and restarts Steam if needed, and keeps existing launch options. It's optional, with a backup of `localconfig.vdf`.
 - Uninstall.cmd offers to remove the launcher from Steam launch options, keeping anything else in them.
