@@ -8,7 +8,7 @@ Starts RivaTuner Statistics Server (RTSS) when you launch a Steam game and close
 
 Use it as a Steam launch option for any game: a lightweight way to auto-start the RTSS frame limiter for older games that run too fast, stutter or have no built-in FPS cap.
 
-Comes with frame limits for 15 older games that break at high frame rates, from Chrome (Techland, 2003) to F.E.A.R., GTA IV and the early Hitman games. See [`config.ini`](config.ini) for the list and the reason for each cap, sourced from PCGamingWiki.
+Comes with frame limits for 14 older games that break at high frame rates, from Chrome (Techland, 2003) to F.E.A.R., GTA IV and the early Hitman games. See [`config.ini`](config.ini) for the list and the reason for each cap, sourced from PCGamingWiki.
 
 **Download:** get `rtss-launcher-<version>.zip` from [Releases](https://github.com/scdemanett/rtss-launcher/releases), or clone the repo. Nothing is pre-compiled; the installer builds the launcher from source on your machine.
 
@@ -21,7 +21,9 @@ Comes with frame limits for 15 older games that break at high frame rates, from 
 1. If you downloaded the zip, right-click it, choose **Properties**, tick **Unblock**, then extract it anywhere.
 2. Install RTSS if it isn't already installed. In RTSS, keep **Start with Windows** set to **OFF**.
 3. Double-click **Install.cmd** and approve the admin prompt.
-4. The installer copies the Steam launch option to your clipboard. In Steam, right-click the game, choose **Properties > General > Launch Options**, and paste:
+4. The installer offers to add the Steam launch option for you. It lists your installed games that have settings in `config.ini`, lets you pick from them or add any other installed game by name, and closes and restarts Steam if it's running (Steam overwrites launch options changed while it's open). Anything already in a game's launch options is kept.
+
+   To do it by hand instead, the installer also copies the launch option to your clipboard. In Steam, right-click the game, choose **Properties > General > Launch Options**, and paste:
    ```
    "C:\Program Files\RTSS Launcher\RTSSLauncher.exe" %command%
    ```
@@ -36,6 +38,7 @@ Run the installer from the Windows account you game on. The scheduled tasks are 
 | Task `\RTSSLauncher\Start RTSS` | Runs `RTSS.exe` elevated in your session. On demand only, with no schedule. |
 | Task `\RTSSLauncher\Stop RTSS` | Runs `RTSSLauncher.exe --stop-rtss` elevated, which closes RTSS and its hook loaders. |
 | RTSS profiles | For each line under `[FrameLimits]` in `config.ini`, sets `[Framerate] Limit` in `RTSS\Profiles\<exe>.cfg`. Existing profiles keep their other settings and are backed up as `.cfg.bak`. New profiles are copied from RTSS's Global profile. |
+| Steam launch options (optional) | Only if you say yes: puts the launcher in front of `%command%` for the games you choose, in `Steam\userdata\<account>\config\localconfig.vdf`. The rest of the file is left untouched, and the previous copy is saved as `localconfig.vdf.rtsslauncher.bak`. |
 
 The scheduled tasks are what let a normal, non-admin process (Steam) start and stop the elevated RTSS without a UAC prompt. Both tasks only point at files in admin-protected folders (Program Files).
 
@@ -53,7 +56,7 @@ ChromeSingle.exe=60
 ChromeNet.exe=60
 SomeOtherGame.exe=144
 ```
-Then run **Install.cmd** again. Use `0` to remove a limit. Any Steam game can use the launcher with the same launch option, even without a frame-limit line.
+Then run **Install.cmd** again; it offers to add the launch option to any newly listed games. Use `0` to remove a limit. Any Steam game can use the launcher with the same launch option, even without a frame-limit line.
 
 Comments must be on their own line starting with `;`. Use the game's real exe, not its launcher, and avoid generic names like `Game.exe`: RTSS matches profiles by file name, so a generic name would cap unrelated programs too.
 
@@ -82,10 +85,10 @@ To find the name of any setting, change it in the RTSS window, close RTSS, and s
 - **Do I need MSI Afterburner?** No. Only RTSS is needed. If Afterburner is running it may start RTSS itself; the launcher then leaves that RTSS open, since it didn't start it.
 - **Does it work with non-Steam games?** It's built for Steam's `%command%` launch option. Other launchers that can wrap a game's command line may work but aren't tested.
 - **Why not just set RTSS to start with Windows?** That keeps RTSS hooking every app all the time. This starts it only for the games you choose and closes it afterwards.
-- **Is it safe?** The source is one C# file and two PowerShell scripts. Nothing is downloaded; the exe is compiled on your machine from `src\RTSSLauncher.cs`.
+- **Is it safe?** The source is one C# file and three PowerShell scripts. Nothing is downloaded; the exe is compiled on your machine from `src\RTSSLauncher.cs`.
 
 ## Uninstall
-Double-click **Uninstall.cmd**, here or in `C:\Program Files\RTSS Launcher`. Then clear the game's Steam launch options. RTSS and its profiles are left in place.
+Double-click **Uninstall.cmd**, here or in `C:\Program Files\RTSS Launcher`. It lists the Steam games whose launch options use the launcher and offers to remove it from them, keeping any other options. RTSS and its profiles are left in place.
 
 ## Files
 ```
@@ -93,6 +96,7 @@ Install.cmd / Uninstall.cmd   double-click entry points
 config.ini                    RTSS path, timing, frame limits
 scripts\Install.ps1           installer (self-elevates)
 scripts\Uninstall.ps1         uninstaller
+scripts\Steam.ps1             finds Steam games and edits their launch options
 src\RTSSLauncher.cs           launcher source (C# 5, compiled on install)
 ```
 

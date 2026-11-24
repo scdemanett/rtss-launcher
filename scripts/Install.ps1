@@ -32,6 +32,17 @@ function Step($text) { Write-Host "`n> $text" -ForegroundColor Cyan }
 function Ok($text)   { Write-Host "  $text" -ForegroundColor Green }
 function Info($text) { Write-Host "  $text" }
 
+. (Join-Path $PSScriptRoot 'Steam.ps1')
+
+function Read-Numbers([string]$Text, [int]$Max) {
+    $nums = New-Object 'System.Collections.Generic.List[int]'
+    foreach ($t in ($Text -split '[\s,;]+')) {
+        $n = 0
+        if ([int]::TryParse($t, [ref]$n) -and $n -ge 1 -and $n -le $Max -and -not $nums.Contains($n)) { $nums.Add($n) }
+    }
+    return ,$nums
+}
+
 # ---------------------------------------------------------------- ini helpers
 function Read-Ini([string]$Path) {
     $result = @{}; $section = ''
@@ -122,6 +133,82 @@ function Find-RTSS([string]$Configured) {
     throw 'RTSS.exe not found. Install RivaTuner Statistics Server, or set [RTSS] Path in config.ini.'
 }
 
+# ---------------------------------------------------------------- Steam launch options (opt-in)
+# Returns $true if launch options were written for at least one game.
+function Invoke-SteamLaunchOptionSetup([string]$LauncherExe, [string[]]$ExeNames) {
+    Step 'Steam launch options'
+    $steamDir = Find-SteamDir
+    if (-not $steamDir) { Info 'Steam not found. Add the launch option by hand (see below).'; return $false }
+    $answer = Read-Host '  Add the launch option to your Steam games for you? [Y/n]'
+    if ($answer -match '^\s*n') { return $false }
+
+    Info 'Looking for installed games...'
+    $games    = Get-SteamGames $steamDir
+    $found    = if ($ExeNames) { Find-SteamGamesByExe $games $ExeNames } else { @() }
+    $selected = [ordered]@{}                                  # AppId -> game
+
+    if ($found.Count) {
+        Info 'Installed games with settings in config.ini:'
+        for ($i = 0; $i -lt $found.Count; $i++) {
+            Info ('  {0,2}. {1}  ({2})' -f ($i + 1), $found[$i].Game.Name, ($found[$i].Exes -join ', '))
+        }
+        $pick = Read-Host '  Press Enter for all of these, type numbers to choose some (e.g. 1 3), or 0 for none'
+        $nums = if ($pick.Trim()) { Read-Numbers $pick $found.Count } else { 1..$found.Count }
+        foreach ($n in $nums) { $g = $found[$n - 1].Game; $selected[$g.AppId] = $g }
+    }
+
+    while ($true) {
+        $q = (Read-Host '  Add another installed game? Type part of its name, or press Enter to continue').Trim()
+        if (-not $q) { break }
+        $hits = @($games | Where-Object { $_.Name.IndexOf($q, [StringComparison]::OrdinalIgnoreCase) -ge 0 -and
+                                             -not $selected.Contains($_.AppId) })
+        if (-not $hits.Count) { Info '  No installed game matches that.'; continue }
+        if ($hits.Count -gt 15) { Info "  $($hits.Count) matches; showing 15. Type more of the name to narrow it down."; $hits = $hits[0..14] }
+        for ($i = 0; $i -lt $hits.Count; $i++) { Info ('  {0,2}. {1}' -f ($i + 1), $hits[$i].Name) }
+        $p = if ($hits.Count -eq 1) { Read-Host '  Add it? [Y/n]' } else { Read-Host '  Numbers to add (Enter to skip)' }
+        $nums = if ($hits.Count -eq 1) { if ($p -match '^\s*n') { @() } else { @(1) } } else { Read-Numbers $p $hits.Count }
+        foreach ($n in $nums) { $g = $hits[$n - 1]; $selected[$g.AppId] = $g; Ok "Added $($g.Name)" }
+    }
+    if (-not $selected.Count) { Info 'No games chosen.'; return $false }
+
+    $accounts = @(Get-SteamAccounts $steamDir)
+    if (-not $accounts.Count) { Info 'No Steam account found on this PC. Sign in to Steam once, then run Install.cmd again.'; return $false }
+    $targets = @($accounts[0])
+    if ($accounts.Count -gt 1) {
+        Info 'Steam accounts on this PC:'
+        for ($i = 0; $i -lt $accounts.Count; $i++) {
+            Info ('  {0}. {1}{2}' -f ($i + 1), $accounts[$i].Name, $(if ($i -eq 0) { '  (most recent)' } else { '' }))
+        }
+        $p = Read-Host '  Which account? Press Enter for 1, type a number, or A for all'
+        if ($p -match '^\s*a') { $targets = $accounts }
+        else { $n = Read-Numbers $p $accounts.Count; if ($n.Count) { $targets = @($accounts[$n[0] - 1]) } }
+    }
+
+    $steamState = Request-SteamClosed $steamDir
+    if (-not $steamState) { Info 'Skipped; Steam launch options were not changed.'; return $false }
+
+    $wrote = $false
+    try {
+        foreach ($acct in $targets) {
+            $current = Get-SteamLaunchOptions ([IO.File]::ReadAllText($acct.Config, $script:Utf8NoBom))
+            $changes = @{}
+            foreach ($id in $selected.Keys) {
+                $old = if ($current.ContainsKey($id)) { $current[$id] } else { '' }
+                $new = Add-LauncherOption $old $LauncherExe
+                if ($new -cne $old) { $changes[$id] = $new }
+            }
+            if ($changes.Count) { Write-SteamLaunchOptions $acct.Config $changes; $wrote = $true }
+            Ok ('{0}: {1} game(s) updated, {2} already set' -f $acct.Name, $changes.Count, ($selected.Count - $changes.Count))
+            foreach ($id in $changes.Keys) { Info ('    {0}:  {1}' -f $selected[$id].Name, $changes[$id]) }
+        }
+        if ($wrote) { Info 'A backup of each changed file was saved as localconfig.vdf.rtsslauncher.bak.' }
+    }
+    finally {
+        if ($steamState -eq 'closed') { Info 'Starting Steam again.'; Start-SteamAsUser $steamDir }
+    }
+    return $true
+}
+
 function Stop-RTSS {
     $names = 'RTSS', 'RTSSHooksLoader64', 'RTSSHooksLoader'
     $procs = Get-Process -Name $names -ErrorAction SilentlyContinue
@@ -165,6 +252,7 @@ try {
     Copy-Item (Join-Path $PackageDir 'Uninstall.cmd') $InstallDir -Force
     New-Item -ItemType Directory -Force -Path (Join-Path $InstallDir 'scripts') | Out-Null
     Copy-Item (Join-Path $PackageDir 'scripts\Uninstall.ps1') (Join-Path $InstallDir 'scripts') -Force
+    Copy-Item (Join-Path $PackageDir 'scripts\Steam.ps1')     (Join-Path $InstallDir 'scripts') -Force
     Ok $InstallDir
 
     Step 'Creating scheduled tasks'
@@ -237,11 +325,16 @@ try {
         if ($wasRunning) { Start-ScheduledTask -TaskPath $TaskPath -TaskName 'Start RTSS'; Info 'RTSS was running - restarted it.' }
     }
 
+    $steamDone = $false
+    try { $steamDone = Invoke-SteamLaunchOptionSetup $launcherExe $exeNames.ToArray() }
+    catch { Write-Host "  Could not set Steam launch options: $($_.Exception.Message)" -ForegroundColor Yellow }
+
     $launchOption = "`"$launcherExe`" %command%"
     try { Set-Clipboard -Value $launchOption } catch { }
 
     Write-Host "`nDone." -ForegroundColor Green
-    Write-Host "`nIn Steam: right-click the game > Properties > General > Launch Options, and paste:" -ForegroundColor White
+    $where = if ($steamDone) { 'For any other game, in Steam' } else { 'In Steam' }
+    Write-Host "`n${where}: right-click the game > Properties > General > Launch Options, and paste:" -ForegroundColor White
     Write-Host "`n  $launchOption`n" -ForegroundColor Yellow
     Info '(Already copied to your clipboard.)'
     Info 'Keep "Start with Windows" OFF in RTSS, or the launcher will leave RTSS running.'
