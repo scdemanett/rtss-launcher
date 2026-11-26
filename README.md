@@ -8,7 +8,7 @@ Starts RivaTuner Statistics Server (RTSS) when you launch a Steam game and close
 
 Use it as a Steam launch option for any game: a lightweight way to auto-start the RTSS frame limiter for older games that run too fast, stutter or have no built-in FPS cap.
 
-Comes with frame limits for 14 older games that break at high frame rates, from Chrome (Techland, 2003) to F.E.A.R., GTA IV and the early Hitman games. See [`config.ini`](config.ini) for the list and the reason for each cap, sourced from PCGamingWiki.
+Comes with frame limits for 77 games that break at high frame rates, from Deus Ex, Max Payne and the Prince of Persia trilogy to F.E.A.R., The Witcher, GTA IV, Splinter Cell and the early Hitman and Assassin's Creed games, plus commented-out caps for problems that only show up in one level or mission. See [`config.ini`](config.ini) for the list and the reason for each cap, sourced from PCGamingWiki.
 
 **Download:** get `rtss-launcher-<version>.zip` from [Releases](https://github.com/scdemanett/rtss-launcher/releases), or clone the repo. Nothing is pre-compiled; the installer builds the launcher from source on your machine.
 

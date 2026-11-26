@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.3.0] - 2026-11-25
+### Added
+- Frame limits for 63 more games, from a scan of every PCGamingWiki article whose fix is to cap the frame rate. Among them: Assassin's Creed and Brotherhood, Baldur's Gate: Dark Alliance I and II, Beyond Good & Evil, Dead Island, Devil May Cry HD Collection, Far Cry 2, Final Fantasy VII, Grand Theft Auto: Episodes from Liberty City, the Legacy of Kain games, Lego Batman and Lego Indiana Jones, Lost Planet, Mafia II, Manhunt, Max Payne, the Prince of Persia trilogy, Psychonauts, Knights of the Old Republic II, Republic Commando, Splinter Cell and Blacklist, The Witcher and Thief: Deadly Shadows.
+- Commented-out, situational limits for Alien: Isolation, Assassin's Creed: Revelations, Gabriel Knight 3, the Tomb Raider trilogy (2013 to Shadow), the Jedi Knight games, Rogue Squadron 3D and Starfighter.
+
 ## [1.2.0] - 2026-11-24
 ### Added
 - Install.cmd can add the Steam launch option for you. It finds installed games with settings in `config.ini`, lets you choose from them or add any other installed game by name, closes and restarts Steam if needed, and keeps existing launch options. It's optional, with a backup of `localconfig.vdf`.
